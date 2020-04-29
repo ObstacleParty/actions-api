@@ -1,0 +1,22 @@
+{
+  "name": "actions-api",
+  "version": "0.0.1",
+  "description": "When you see it",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/ObstacleParty/actions-api.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ObstacleParty/actions-api/issues"
+  },
+  "homepage": "https://github.com/ObstacleParty/actions-api#readme"
+}
