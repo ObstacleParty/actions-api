@@ -28,12 +28,18 @@ module.exports = async (req, res) => {
   // TODO: Check for existing execution to pick up where we left off
   const responseObj = {
     executionId: uuidv4(),
-    status: 'unknown',
+    status: 'done',
     outcome: {}
   };
 
+  const actions = getActions(stage, context.tenant);
+
+  if (!actions) {
+    return res.status(400).json(responseObj);
+  }
+
   // TODO: Get actions from tenant for the stage we're processing
-  getActions(stage).some((action) => {
+  actions.some((action) => {
     console.log(action.name);
     switch(action.type) {
       case 'code':
@@ -42,13 +48,10 @@ module.exports = async (req, res) => {
           action.process(user, context, config);
           return false;
         } catch (error) {
-          responseObj.status = 'done';
-          responseObj.outcome = {
-            action: 'error',
-            error: {
-              code: error.code || 'unknown',
-              message: error.message
-            }
+          responseObj.outcome.action = 'error';
+          responseObj.outcome.error = {
+            code: error.code || 'unknown',
+            message: error.message
           };
           return true;
         }
