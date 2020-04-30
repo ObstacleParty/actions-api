@@ -1,4 +1,3 @@
-// const got = require('got');
 const { v4: uuidv4 } = require('uuid');
 
 const { getActions } = require('../lib/utils');
@@ -8,7 +7,7 @@ module.exports = async (req, res) => {
   const { body } = req;
 
   if (!body || !body.stage || !body.user || !body.context || !body.config) {
-    return res.status(400).json({'error': 'missing_params'});
+    return res.status(400).json({ error: 'missing_params' });
   }
 
   // TODO: add state, rules
@@ -20,7 +19,7 @@ module.exports = async (req, res) => {
   ];
 
   if (!ALLOWED_STAGES.includes(stage)) {
-    return res.status(400).json({'error': 'invalid_stage'});
+    return res.status(400).json({ error: 'invalid_stage' });
   }
 
   // TODO: stronger body checking
@@ -32,7 +31,8 @@ module.exports = async (req, res) => {
     outcome: {}
   };
 
-  const actions = getActions(stage, context.tenant);
+  // TODO: Get actions pipeline from somewhere
+  const actions = getActions(req.headers.host, stage);
 
   if (!actions) {
     return res.status(400).json(responseObj);
@@ -65,6 +65,8 @@ module.exports = async (req, res) => {
         return true;
     }
   });
+
+  // TODO: Save current execution state with user, context, and current prompt data
 
   return res.status(200).json(responseObj);
 };
