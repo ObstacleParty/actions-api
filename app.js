@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 app.post('/api/execute', require('./api/execute'));
-app.get('/api/continue', require('./api/continue'));
+app.post('/api/continue/:executionId', require('./api/continue'));
 app.all('/api/current/:executionId', require('./api/current/[name].js'));
 
 http.createServer(app)

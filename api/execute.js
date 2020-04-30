@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const { getActions } = require('../lib/utils');
 const store = require('../lib/store');
+const executeActions = require('../lib/executeActions');
 
 module.exports = async (req, res) => {
 
@@ -40,64 +41,18 @@ module.exports = async (req, res) => {
   const executionId = uuidv4();
   initialResponse.executionId = executionId;
 
-  // TODO: Get actions from tenant for the stage we're processing
-  // TODO: Make the action pipeline static for this request so continue is not affected by new actions
-  let previousAction;
-  const { actionLog } = await actions.reduce(async (accumulatorPromise, action) => {
-    const { actionLog, user, context, config } = await accumulatorPromise;
-    previousAction = actionLog[actionLog.length - 1];
-
-    if (previousAction && previousAction.status !== 'success') {
-      return { actionLog, user, context, config };
-    }
-
-    switch(action.type) {
-
-      case 'code':
-        try {
-          const { user: newUser, context: newContext} = await action.process(user, context, config);
-          return {
-            user: newUser,
-            context: newContext,
-            actionLog: actionLog.concat([{
-              name: action.name,
-              type: action.type,
-              status: 'success'
-            }]),
-          };
-        } catch (error) {
-          return {
-            user,
-            context,
-            actionLog: actionLog.concat([{
-              name: action.name,
-              type: action.type,
-              status: 'error',
-            }])
-          };
-        }
-
-      case 'prompt':
-        return {
-          user,
-          context,
-          actionLog: actionLog.concat([{
-            name: action.name,
-            type: action.type,
-            status: 'pending',
-            action: 'prompt'
-          }])
-        };
-    }
-  }, { actionLog: [], user, context, config });
+  const { actionLog, user: newUser, context: newContext, config: newConfig } = await executeActions(
+    {actionLog: [], user, context, config },
+    actions
+  );
 
   const finalResponse = {
     ...initialResponse,
-    status: previousAction.status,
+    status: actionLog[actionLog.length - 1].status,
     actionLog
   };
 
-  store.set(executionId, {user, context, config, actionLog, pipeline: actions});
+  store.set(executionId, {user: newUser, context: newContext, config: newConfig, actionLog, pipeline: actions});
 
   return res.json(finalResponse);
 };
