@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
   };
 
   // TODO: Get actions pipeline from somewhere
-  const actions = getActions(req.headers.host, stage);
+  const actions = await getActions(req.headers.host, stage);
 
   if (!actions) {
     return res.status(400).json(responseObj);
