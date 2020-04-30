@@ -12,12 +12,12 @@ module.exports = async (req, res) => {
   const executionId = query.name;
 
   if ('get' === method.toLowerCase()) {
-    const execution = getExecution(executionId);
+    const execution = await getExecution(executionId);
     // TODO: Filter user and context before sending
 
     let output;
     try {
-      output = getPrompt(
+      output = await getPrompt(
         execution.currentAction.renderPromptUrl,
         {
           user: {
