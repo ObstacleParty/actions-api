@@ -25,6 +25,7 @@ module.exports = async (req, res) => {
   // TODO: stronger body checking
 
   // TODO: Check for existing execution to pick up where we left off
+  // Where does the execution ID come from?
   const initialResponse = {
     executionId: uuidv4(),
     status: 'done',
@@ -33,7 +34,7 @@ module.exports = async (req, res) => {
   };
 
   // TODO: Get actions pipeline from somewhere
-  const actions = await getActions(req.headers.host, stage);
+  const actions = await getActions(context.domain, stage);
 
   if (!actions) {
     return res.status(400).json(initialResponse);
@@ -44,20 +45,19 @@ module.exports = async (req, res) => {
     const { actionLog, user, context, config } = await accumulatorPromise;
     const previousAction = actionLog[actionLog.length - 1];
 
-    if(previousAction && previousAction.status !== 'success') {
+    if (previousAction && previousAction.status !== 'success') {
       return { actionLog, user, context, config };
     }
 
-    console.log(action.name);
     switch(action.type) {
+
+      // Action is code that we can run to create a
       case 'code':
-        // TODO: Implement handling
         try {
-          const { user: newUser, context: newContext, config: newConfig} = await action.process(user, context, config);
+          const { user: newUser, context: newContext} = await action.process(user, context, config);
           return {
             user: newUser,
             context: newContext,
-            config: newConfig,
             actionLog: actionLog.concat([{
               name: action.name,
               type: action.type,
@@ -68,7 +68,6 @@ module.exports = async (req, res) => {
           return {
             user,
             context,
-            config,
             actionLog: actionLog.concat([{
               name: action.name,
               type: action.type,
@@ -81,7 +80,6 @@ module.exports = async (req, res) => {
         return {
           user,
           context,
-          config,
           actionLog: actionLog.concat([{
             name: action.name,
             type: action.type,
@@ -103,6 +101,7 @@ module.exports = async (req, res) => {
     outcome: lastResult.outcome,
     actionLog
   };
+
   // TODO: Save current execution state with user, context, and current prompt data
 
   return res.status(200).json(finalResponse);
