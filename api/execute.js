@@ -28,7 +28,6 @@ module.exports = async (req, res) => {
   const initialResponse = {
     executionId: null,
     status: 'done',
-    outcome: {},
     actionLog: []
   };
 
@@ -86,10 +85,7 @@ module.exports = async (req, res) => {
             name: action.name,
             type: action.type,
             status: 'pending',
-            outcome: {
-              action: 'prompt',
-              path: action.promptUrl
-            }
+            action: 'prompt'
           }])
         };
     }
@@ -98,7 +94,6 @@ module.exports = async (req, res) => {
   const finalResponse = {
     ...initialResponse,
     status: previousAction.status,
-    outcome: previousAction.outcome,
     actionLog
   };
 
