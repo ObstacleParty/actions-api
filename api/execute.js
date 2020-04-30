@@ -24,9 +24,9 @@ module.exports = async (req, res) => {
   }
 
   // TODO: stronger body checking
-  const executionId = uuidv4();
+
   const initialResponse = {
-    executionId,
+    executionId: null,
     status: 'done',
     outcome: {},
     actionLog: []
@@ -35,13 +35,18 @@ module.exports = async (req, res) => {
   const actions = await getActions(context.domain, stage);
 
   if (!actions) {
-    return res.status(400).json(initialResponse);
+    return res.json(initialResponse);
   }
 
+  const executionId = uuidv4();
+  initialResponse.executionId = executionId;
+
   // TODO: Get actions from tenant for the stage we're processing
+  // TODO: Make the action pipeline static for this request so continue is not affected by new actions
+  let previousAction;
   const { actionLog } = await actions.reduce(async (accumulatorPromise, action) => {
     const { actionLog, user, context, config } = await accumulatorPromise;
-    const previousAction = actionLog[actionLog.length - 1];
+    previousAction = actionLog[actionLog.length - 1];
 
     if (previousAction && previousAction.status !== 'success') {
       return { actionLog, user, context, config };
@@ -49,7 +54,6 @@ module.exports = async (req, res) => {
 
     switch(action.type) {
 
-      // Action is code that we can run to take update the user profile, etc.
       case 'code':
         try {
           const { user: newUser, context: newContext} = await action.process(user, context, config);
@@ -74,7 +78,6 @@ module.exports = async (req, res) => {
           };
         }
 
-      // Action is a prompt to be rendered and collected.
       case 'prompt':
         return {
           user,
@@ -92,16 +95,14 @@ module.exports = async (req, res) => {
     }
   }, { actionLog: [], user, context, config });
 
-  const lastResult = actionLog[actionLog.length - 1];
-
   const finalResponse = {
     ...initialResponse,
-    status: lastResult.status,
-    outcome: lastResult.outcome,
+    status: previousAction.status,
+    outcome: previousAction.outcome,
     actionLog
   };
 
   store.set(executionId, {user, context, config, actionLog});
 
-  return res.status(200).json(finalResponse);
+  return res.json(finalResponse);
 };

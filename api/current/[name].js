@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
       return res.status(200).json(execution);
 
     case 'get':
-      return res.status(200).json(execution);
+      return res.status(200).json(execution.actionLog.pop());
 
     default:
       return res.status(404).json({ error: 'not_found' });
