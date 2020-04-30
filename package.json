@@ -18,5 +18,9 @@
   "bugs": {
     "url": "https://github.com/ObstacleParty/actions-api/issues"
   },
-  "homepage": "https://github.com/ObstacleParty/actions-api#readme"
+  "homepage": "https://github.com/ObstacleParty/actions-api#readme",
+  "dependencies": {
+    "got": "^11.0.2",
+    "uuid": "^8.0.0"
+  }
 }
