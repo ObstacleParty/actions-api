@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/ObstacleParty/actions-api#readme",
   "dependencies": {
+    "express": "^4.17.1",
     "got": "^11.0.2",
     "uuid": "^8.0.0"
   }

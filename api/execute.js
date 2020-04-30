@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 
 const { getActions } = require('../lib/utils');
+const store = require('../lib/store');
 
 module.exports = async (req, res) => {
 
@@ -23,17 +24,14 @@ module.exports = async (req, res) => {
   }
 
   // TODO: stronger body checking
-
-  // TODO: Check for existing execution to pick up where we left off
-  // Where does the execution ID come from?
+  const executionId = uuidv4();
   const initialResponse = {
-    executionId: uuidv4(),
+    executionId,
     status: 'done',
     outcome: {},
     actionLog: []
   };
 
-  // TODO: Get actions pipeline from somewhere
   const actions = await getActions(context.domain, stage);
 
   if (!actions) {
@@ -51,7 +49,7 @@ module.exports = async (req, res) => {
 
     switch(action.type) {
 
-      // Action is code that we can run to create a
+      // Action is code that we can run to take update the user profile, etc.
       case 'code':
         try {
           const { user: newUser, context: newContext} = await action.process(user, context, config);
@@ -76,6 +74,7 @@ module.exports = async (req, res) => {
           };
         }
 
+      // Action is a prompt to be rendered and collected.
       case 'prompt':
         return {
           user,
@@ -102,7 +101,7 @@ module.exports = async (req, res) => {
     actionLog
   };
 
-  // TODO: Save current execution state with user, context, and current prompt data
+  store.set(executionId, {user, context, config, actionLog});
 
   return res.status(200).json(finalResponse);
 };
