@@ -25,48 +25,84 @@ module.exports = async (req, res) => {
   // TODO: stronger body checking
 
   // TODO: Check for existing execution to pick up where we left off
-  const responseObj = {
+  const initialResponse = {
     executionId: uuidv4(),
     status: 'done',
-    outcome: {}
+    outcome: {},
+    actionLog: []
   };
 
   // TODO: Get actions pipeline from somewhere
   const actions = await getActions(req.headers.host, stage);
 
   if (!actions) {
-    return res.status(400).json(responseObj);
+    return res.status(400).json(initialResponse);
   }
 
   // TODO: Get actions from tenant for the stage we're processing
-  actions.some((action) => {
+  const { actionLog } = actions.reduce(({ actionLog, user, context, config }, action) => {
+    const previousAction = actionLog[actionLog.length - 1];
+
+    if(previousAction && previousAction.status !== 'success') {
+      return { actionLog, user, context, config };
+    }
+
     console.log(action.name);
     switch(action.type) {
       case 'code':
         // TODO: Implement handling
         try {
-          action.process(user, context, config);
-          return false;
-        } catch (error) {
-          responseObj.outcome.action = 'error';
-          responseObj.outcome.error = {
-            code: error.code || 'unknown',
-            message: error.message
+          const { user: newUser, context: newContext, config: newConfig} = action.process(user, context, config);
+          return {
+            user: newUser,
+            context: newContext,
+            config: newConfig,
+            actionLog: actionLog.concat([{
+              name: action.name,
+              type: action.type,
+              status: 'success'
+            }]),
           };
-          return true;
+        } catch (error) {
+          return {
+            user,
+            context,
+            config,
+            actionLog: actionLog.concat([{
+              name: action.name,
+              type: action.type,
+              status: 'error',
+            }])
+          };
         }
 
       case 'prompt':
-        responseObj.status = 'pending';
-        responseObj.outcome = {
-          action: 'prompt',
-          path: action.promptUrl
+        return {
+          user,
+          context,
+          config,
+          actionLog: actionLog.concat([{
+            name: action.name,
+            type: action.type,
+            status: 'pending',
+            outcome: {
+              action: 'prompt',
+              path: action.promptUrl
+            }
+          }])
         };
-        return true;
     }
-  });
+  }, { actionLog: [], user, context, config });
 
+  const lastResult = actionLog[actionLog.length - 1];
+
+  const finalResponse = {
+    ...initialResponse,
+    status: lastResult.status,
+    outcome: lastResult.outcome,
+    actionLog
+  };
   // TODO: Save current execution state with user, context, and current prompt data
 
-  return res.status(200).json(responseObj);
+  return res.status(200).json(finalResponse);
 };
