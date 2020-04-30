@@ -40,7 +40,8 @@ module.exports = async (req, res) => {
   }
 
   // TODO: Get actions from tenant for the stage we're processing
-  const { actionLog } = actions.reduce(({ actionLog, user, context, config }, action) => {
+  const { actionLog } = await actions.reduce(async (accumulatorPromise, action) => {
+    const { actionLog, user, context, config } = await accumulatorPromise;
     const previousAction = actionLog[actionLog.length - 1];
 
     if(previousAction && previousAction.status !== 'success') {
@@ -52,7 +53,7 @@ module.exports = async (req, res) => {
       case 'code':
         // TODO: Implement handling
         try {
-          const { user: newUser, context: newContext, config: newConfig} = action.process(user, context, config);
+          const { user: newUser, context: newContext, config: newConfig} = await action.process(user, context, config);
           return {
             user: newUser,
             context: newContext,
