@@ -97,7 +97,7 @@ module.exports = async (req, res) => {
     actionLog
   };
 
-  store.set(executionId, {user, context, config, actionLog});
+  store.set(executionId, {user, context, config, actionLog, pipeline: actions});
 
   return res.json(finalResponse);
 };

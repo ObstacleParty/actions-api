@@ -16,14 +16,14 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'invalid_id' });
   }
 
-  // TODO: Bad idea to mutate?
-  const currentAction = execution.actionLog.pop();
-
   if ('get' === method.toLowerCase()) {
-    return res.status(200).json(currentAction);
+    return res.status(200).json(execution);
   }
 
   if ('post' === method.toLowerCase()) {
+
+    // TODO: Bad idea to mutate?
+    const currentAction = execution.actionLog.pop();
 
     // We should only be accepting execution updates if we're waiting for them
     if ('prompt' !== currentAction.action) {
