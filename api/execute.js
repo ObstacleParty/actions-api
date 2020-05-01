@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { getActions } = require('../lib/utils');
 const store = require('../lib/store');
 const executeActions = require('../lib/executeActions');
+const { ALLOWED_STAGES } = require('../lib/constants');
 
 module.exports = async (req, res) => {
 
@@ -14,11 +15,6 @@ module.exports = async (req, res) => {
 
   // TODO: add state, rules
   const { stage, user, context, config } = body;
-
-  const ALLOWED_STAGES = [
-    'pre_login', 'post_login', 'post_change_password',
-    'pre_user_registration', 'post_user_registration'
-  ];
 
   if (!ALLOWED_STAGES.includes(stage)) {
     return res.status(400).json({ error: 'invalid_stage' });

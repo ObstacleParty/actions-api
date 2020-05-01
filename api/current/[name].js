@@ -40,6 +40,20 @@ module.exports = async (req, res) => {
       };
     }
 
+    if (body.user_metadata) {
+      execution.user.user_metadata = {
+        ...(execution.user.user_metadata || {}),
+        ...body.user_metadata
+      };
+    }
+
+    if (body.app_metadata) {
+      execution.user.app_metadata = {
+        ...(execution.user.app_metadata || {}),
+        ...body.app_metadata
+      };
+    }
+
     // TODO: Does it make sense to update context? Does this approach work?
     if (body.context) {
       execution.context.actions = {
