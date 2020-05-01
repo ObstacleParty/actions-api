@@ -21,8 +21,9 @@
   },
   "homepage": "https://github.com/ObstacleParty/actions-api#readme",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "got": "^11.0.2",
+    "got": "^9.6",
     "uuid": "^8.0.0"
   },
   "devDependencies": {

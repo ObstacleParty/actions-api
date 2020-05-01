@@ -1,3 +1,5 @@
+const got = require('got');
+
 const store = require('../../lib/store');
 
 module.exports = async (req, res) => {
@@ -30,36 +32,66 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'invalid_execution_state' });
     }
 
-    // TODO: Better user data handling ... don't want to update everything
-    // Root profile updates should be explicit and part of the "permissions" for the Action
-    // Should the metadata be namespaced? Maybe with the action name?
-    if (body.user) {
-      execution.user.user_metadata = {
-        ...(execution.user.user_metadata || {}),
-        ...body.user
-      };
-    }
-
-    if (body.user_metadata) {
-      execution.user.user_metadata = {
-        ...(execution.user.user_metadata || {}),
-        ...body.user_metadata
-      };
-    }
-
-    if (body.app_metadata) {
-      execution.user.app_metadata = {
-        ...(execution.user.app_metadata || {}),
-        ...body.app_metadata
-      };
-    }
-
     // TODO: Does it make sense to update context? Does this approach work?
-    if (body.context) {
+    if (body.context && typeof body.context === 'object') {
       execution.context.actions = {
         ...(execution.context.actions || {}),
         ...{[currentAction.name]: body.context}
       };
+
+      currentAction.contextUpdates = body.context;
+    }
+
+    // TODO: Address overall data handling here
+    const userUpdates = {};
+
+    if (body.user && typeof body.user === 'object') {
+      execution.user.user_metadata = {
+        ...(execution.user.user_metadata || {}),
+        ...body.user
+      };
+
+      userUpdates.user_metadata = body.user;
+    }
+
+    if (body.user_metadata && typeof body.user_metadata === 'object') {
+      execution.user.user_metadata = {
+        ...(execution.user.user_metadata || {}),
+        ...body.user_metadata
+      };
+
+      userUpdates.user_metadata = { ...(userUpdates.user_metadata || {}), ...body.user_metadata };
+    }
+
+    if (body.app_metadata && typeof body.app_metadata === 'object') {
+      execution.user.app_metadata = {
+        ...(execution.user.app_metadata || {}),
+        ...body.app_metadata
+      };
+
+      userUpdates.app_metadata = { ...(userUpdates.app_metadata || {}), ...body.app_metadata };
+    }
+
+    // TODO: Don't use the Management API ...
+    if (Object.keys(userUpdates).length) {
+      currentAction.userUpdates = userUpdates;
+      try {
+        await got(
+          `https://${process.env.AUTH0_DOMAIN}/api/v2/users/${execution.user.user_id}`,
+          {
+            body: userUpdates,
+            json: true,
+            responseType: 'json',
+            method: 'patch',
+            headers: {
+              Authorization: `Bearer ${process.env.AUTH0_API_TOKEN}`,
+              'Content-type': 'application/json'
+            }
+          }
+        );
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     // TODO: Validate and improve this approach
